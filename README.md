@@ -8,6 +8,7 @@ Knowledge Builder lets you upload PDFs, ask questions in a chat interface, and s
 
 - [What it does](#what-it-does)
 - [Tech stack](#tech-stack)
+- [Architecture](#architecture)
 - [Run the app locally](#run-the-app-locally)
 - [How RAG works](#how-rag-works)
 - [API overview](#api-overview)
@@ -32,6 +33,14 @@ Knowledge Builder lets you upload PDFs, ask questions in a chat interface, and s
 | RAG pipeline | LangChain, OpenAI embeddings, `gpt-4o-mini` |
 | Document loading | LangChain `PyPDFLoader` and `WebBaseLoader`, Beautiful Soup |
 | Vector storage | SQLite, SQLiteVec |
+
+## Architecture
+
+The diagram below shows how documents move through ingestion and how a question becomes an answer grounded in retrieved context.
+
+![Knowledge Builder architecture: PDF and web ingestion, SQLiteVec retrieval, and context-grounded answers](./architecture-linkedin.png)
+
+Want to explore the components? Open the standalone [interactive architecture diagram](./architecture.html) in a browser. It lets you highlight ingestion or question flows, select components for explanations, and export the diagram. GitHub displays the PNG preview directly; to use the interactive version, download `architecture.html` and open it locally, or publish it with GitHub Pages.
 
 ## Run the app locally
 

@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Interactive architecture diagram for Knowledge Builder, a full-stack retrieval-augmented generation app."
+    />
+    <title>Knowledge Builder | Interactive Architecture</title>
+    <style id="diagram-style">
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #080d18;
+        color: #e8edf7;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        --panel: #111a2b;
+        --muted: #9aa8be;
+        --line: #27344a;
+        --cyan: #45d6cb;
+        --violet: #aa91ff;
+        --amber: #ffbf69;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 320px;
+        min-height: 100vh;
+        margin: 0;
+        padding: 32px;
+        background:
+          radial-gradient(ellipse at 18% 0%, rgb(61 84 163 / 18%), transparent 36%),
+          radial-gradient(ellipse at 92% 18%, rgb(31 148 157 / 12%), transparent 32%),
+          #080d18;
+      }
+
+      button {
+        font: inherit;
+      }
+
+      .page {
+        max-width: 1780px;
+        margin: 0 auto;
+      }
+
+      .topbar,
+      .toolbar,
+      .toolbar-group,
+      .legend,
+      .legend-item {
+        display: flex;
+        align-items: center;
+      }
+
+      .topbar {
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 22px;
+      }
+
+      .eyebrow {
+        margin: 0 0 9px;
+        color: var(--cyan);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(30px, 4vw, 48px);
+        font-weight: 720;
+        letter-spacing: -0.045em;
+      }
+
+      .subtitle {
+        max-width: 720px;
+        margin: 11px 0 0;
+        color: #aab6c9;
+        font-size: 15px;
+        line-height: 1.65;
+      }
+
+      .toolbar {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      .toolbar-group {
+        gap: 4px;
+        padding: 4px;
+        border: 1px solid #29364b;
+        border-radius: 12px;
+        background: rgb(17 26 43 / 90%);
+      }
+
+      .toolbar button {
+        min-height: 38px;
+        padding: 0 13px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: #acb8ca;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 680;
+        transition:
+          color 150ms ease,
+          background 150ms ease,
+          border-color 150ms ease;
+      }
+
+      .toolbar button:hover,
+      .toolbar button:focus-visible {
+        border-color: #3a4b67;
+        color: #fff;
+        outline: none;
+      }
+
+      .toolbar button[aria-pressed="true"] {
+        background: #24314a;
+        color: #fff;
+      }
+
+      .toolbar .export-button {
+        border-color: #4a43a2;
+        background: #6258d9;
+        color: white;
+      }
+
+      .toolbar .export-button:hover,
+      .toolbar .export-button:focus-visible {
+        border-color: #8378ff;
+        background: #7066ed;
+      }
+
+      .diagram-shell {
+        overflow: hidden;
+        border: 1px solid #26334a;
+        border-radius: 20px;
+        background: #0c1321;
+        box-shadow:
+          0 30px 90px rgb(0 0 0 / 34%),
+          0 0 0 1px rgb(255 255 255 / 2%) inset;
+      }
+
+      .diagram-scroll {
+        overflow: auto;
+      }
+
+      #diagram {
+        display: block;
+        width: 100%;
+        min-width: 950px;
+        height: auto;
+        background: #0c1321;
+      }
+
+      #diagram .lane {
+        fill: #101a2a;
+        stroke: #24334a;
+        stroke-width: 1.5;
+      }
+
+      #diagram .lane-ingest {
+        fill: #171a27;
+      }
+
+      #diagram .lane-chat {
+        fill: #101b2a;
+      }
+
+      #diagram .lane-heading {
+        fill: #d7e1f1;
+        font-size: 14px;
+        font-weight: 800;
+        letter-spacing: 1.2px;
+      }
+
+      #diagram .lane-note {
+        fill: #8797af;
+        font-size: 11px;
+      }
+
+      #diagram .node {
+        cursor: pointer;
+        transition: opacity 160ms ease;
+      }
+
+      #diagram .node rect {
+        fill: #18243a;
+        stroke: #354660;
+        stroke-width: 1.5;
+        transition:
+          stroke 150ms ease,
+          fill 150ms ease,
+          filter 150ms ease;
+      }
+
+      #diagram .node:hover rect,
+      #diagram .node:focus-visible rect,
+      #diagram .node.is-selected rect {
+        fill: #1d2c46;
+        stroke: #8ca4ca;
+        filter: drop-shadow(0 6px 12px rgb(0 0 0 / 24%));
+      }
+
+      #diagram .node:focus {
+        outline: none;
+      }
+
+      #diagram .node-title {
+        fill: #f0f4fb;
+        font-size: 15px;
+        font-weight: 750;
+      }
+
+      #diagram .node-subtitle {
+        fill: #9eacc1;
+        font-size: 11.5px;
+      }
+
+      #diagram .node-tag {
+        fill: #7586a1;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1px;
+      }
+
+      #diagram .accent-cyan rect {
+        stroke: #2b827f;
+      }
+
+      #diagram .accent-violet rect {
+        stroke: #6757a8;
+      }
+
+      #diagram .accent-amber rect {
+        stroke: #9a6f3a;
+      }
+
+      #diagram .accent-green rect {
+        stroke: #397c64;
+      }
+
+      #diagram .flow {
+        fill: none;
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: 0.88;
+        transition: opacity 160ms ease;
+      }
+
+      #diagram .flow-ingest {
+        stroke: #ffbf69;
+      }
+
+      #diagram .flow-chat {
+        stroke: #45d6cb;
+      }
+
+      #diagram .flow-shared {
+        stroke: #aa91ff;
+      }
+
+      #diagram .flow-label {
+        fill: #aab8cd;
+        font-size: 10px;
+        font-weight: 650;
+      }
+
+      #diagram .stage-number {
+        fill: #0c1321;
+        stroke: #62728c;
+        stroke-width: 1.5;
+      }
+
+      #diagram .stage-number-text {
+        fill: #dce5f2;
+        font-size: 10px;
+        font-weight: 800;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+
+      #diagram[data-mode="ingest"] [data-flow="chat"],
+      #diagram[data-mode="chat"] [data-flow="ingest"] {
+        opacity: 0.1;
+        pointer-events: none;
+      }
+
+      #diagram[data-mode="ingest"] [data-flow="shared"],
+      #diagram[data-mode="chat"] [data-flow="shared"] {
+        opacity: 0.56;
+      }
+
+      .below-diagram {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(270px, 370px);
+        gap: 16px;
+        padding: 16px;
+        border-top: 1px solid #26334a;
+        background: #0d1524;
+      }
+
+      .legend,
+      .detail-card {
+        min-height: 76px;
+        padding: 15px 17px;
+        border: 1px solid #25334a;
+        border-radius: 13px;
+        background: #111b2c;
+      }
+
+      .legend {
+        flex-wrap: wrap;
+        gap: 12px 22px;
+      }
+
+      .legend-item {
+        gap: 9px;
+        color: #b6c1d2;
+        font-size: 12px;
+      }
+
+      .legend-line {
+        width: 24px;
+        height: 0;
+        border-top: 2px solid;
+      }
+
+      .legend-line.ingest {
+        border-color: var(--amber);
+      }
+
+      .legend-line.chat {
+        border-color: var(--cyan);
+      }
+
+      .legend-line.shared {
+        border-color: var(--violet);
+      }
+
+      .detail-card {
+        border-color: #393b66;
+        background: linear-gradient(135deg, #171b32, #111b2c);
+      }
+
+      .detail-label {
+        margin: 0 0 6px;
+        color: #9b91ff;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .detail-title {
+        margin: 0;
+        color: #f0f3fa;
+        font-size: 13px;
+        font-weight: 750;
+      }
+
+      .detail-copy {
+        margin: 5px 0 0;
+        color: #a8b4c8;
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 3px 0;
+        color: #8492a8;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      .footer strong {
+        color: #c3ccda;
+        font-weight: 700;
+      }
+
+      .toast {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        z-index: 2;
+        padding: 12px 16px;
+        transform: translateY(14px);
+        border: 1px solid #3c876e;
+        border-radius: 10px;
+        background: #143427;
+        color: #d8ffed;
+        font-size: 13px;
+        opacity: 0;
+        pointer-events: none;
+        transition:
+          opacity 180ms ease,
+          transform 180ms ease;
+      }
+
+      .toast.is-visible {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      @media (max-width: 980px) {
+        body {
+          padding: 20px;
+        }
+
+        .topbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .toolbar {
+          justify-content: flex-start;
+        }
+
+        .below-diagram {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        body {
+          padding: 12px;
+        }
+
+        .toolbar {
+          align-items: stretch;
+          width: 100%;
+        }
+
+        .toolbar-group {
+          flex: 1;
+        }
+
+        .toolbar .export-button {
+          flex: 1;
+        }
+
+        .footer {
+          flex-direction: column;
+        }
+      }
+
+      @media print {
+        body {
+          padding: 0;
+          background: #080d18;
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+
+        .toolbar,
+        .detail-card,
+        .footer {
+          display: none;
+        }
+
+        .topbar {
+          margin: 12px 18px;
+        }
+
+        .diagram-shell {
+          border-radius: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">System design · Retrieval-augmented generation</p>
+          <h1>Knowledge Builder</h1>
+          <p class="subtitle">
+            From PDF and web ingestion to grounded answers: explore how the React client, FastAPI,
+            LangChain, SQLiteVec, and OpenAI work together.
+          </p>
+        </div>
+        <nav class="toolbar" aria-label="Diagram controls">
+          <div class="toolbar-group" role="group" aria-label="Highlight a data flow">
+            <button type="button" class="mode-button" data-mode="all" aria-pressed="true">All flows</button>
+            <button type="button" class="mode-button" data-mode="ingest" aria-pressed="false">Ingestion</button>
+            <button type="button" class="mode-button" data-mode="chat" aria-pressed="false">Question</button>
+          </div>
+          <button type="button" id="download-svg">Download SVG</button>
+          <button type="button" id="download-png" class="export-button">Export LinkedIn PNG</button>
+        </nav>
+      </header>
+
+      <section class="diagram-shell" aria-label="Interactive Knowledge Builder architecture">
+        <div class="diagram-scroll">
+          <svg
+            id="diagram"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 1800 1060"
+            role="img"
+            aria-labelledby="diagram-title diagram-description"
+            data-mode="all"
+          >
+            <title id="diagram-title">Knowledge Builder system architecture</title>
+            <desc id="diagram-description">
+              PDF and web sources are loaded, split into overlapping chunks, embedded, and stored
+              in SQLiteVec. User questions retrieve the top four chunks, which are passed with the
+              question to an OpenAI chat model to generate an answer with source excerpts.
+            </desc>
+            <defs>
+              <marker id="arrow-ingest" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffbf69" />
+              </marker>
+              <marker id="arrow-chat" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#45d6cb" />
+              </marker>
+              <marker id="arrow-shared" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#aa91ff" />
+              </marker>
+              <linearGradient id="header-glow" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0" stop-color="#172949" />
+                <stop offset="1" stop-color="#101827" />
+              </linearGradient>
+            </defs>
+
+            <rect width="1800" height="1060" fill="#0c1321" />
+            <rect x="28" y="24" width="1744" height="82" rx="16" fill="url(#header-glow)" stroke="#27364e" />
+            <text x="58" y="58" fill="#45d6cb" font-size="10" font-weight="800" letter-spacing="2">KNOWLEDGE BUILDER · FULL-STACK RAG</text>
+            <text x="58" y="86" fill="#f3f6fb" font-size="21" font-weight="760">Ingest knowledge once. Retrieve relevant context for every question.</text>
+            <g transform="translate(1450 52)">
+              <circle cx="0" cy="0" r="5" fill="#45d6cb" />
+              <text x="12" y="4" fill="#aebbd0" font-size="11">Question flow</text>
+              <circle cx="126" cy="0" r="5" fill="#ffbf69" />
+              <text x="138" y="4" fill="#aebbd0" font-size="11">Ingestion flow</text>
+            </g>
+
+            <rect class="lane lane-ingest" x="28" y="128" width="1744" height="404" rx="18" />
+            <rect class="lane lane-chat" x="28" y="548" width="1744" height="484" rx="18" />
+            <text class="lane-heading" x="54" y="163">01 / INGESTION — BUILD THE KNOWLEDGE BASE</text>
+            <text class="lane-note" x="54" y="183">PDF upload and startup web indexing converge into the same chunk → embedding → vector storage pipeline.</text>
+            <text class="lane-heading" x="54" y="583">02 / QUESTION — RETRIEVE, AUGMENT, GENERATE</text>
+            <text class="lane-note" x="54" y="603">Each question searches the stored vectors, then the retrieved context grounds the model response.</text>
+
+            <g class="node accent-amber" data-node="pdf-source" data-flow="ingest" tabindex="0" role="button" aria-label="PDF upload source">
+              <rect x="58" y="226" width="226" height="104" rx="13" />
+              <text class="node-tag" x="77" y="250">CLIENT · FILE INPUT</text>
+              <text class="node-title" x="77" y="276">PDF upload</text>
+              <text class="node-subtitle" x="77" y="298">PDF-only picker · multipart files</text>
+              <text class="node-subtitle" x="77" y="315">Upload endpoint: POST /ingest</text>
+            </g>
+
+            <g class="node accent-amber" data-node="web-source" data-flow="ingest" tabindex="0" role="button" aria-label="Configured web source">
+              <rect x="58" y="368" width="226" height="104" rx="13" />
+              <text class="node-tag" x="77" y="392">CONFIGURED SOURCE</text>
+              <text class="node-title" x="77" y="418">Government schemes page</text>
+              <text class="node-subtitle" x="77" y="440">DEFAULT_RAG_URL · indexed at startup</text>
+              <text class="node-subtitle" x="77" y="457">Skipped when already in SQLite</text>
+            </g>
+
+            <g class="node accent-amber" data-node="api-ingest" data-flow="ingest" tabindex="0" role="button" aria-label="FastAPI ingestion endpoint">
+              <rect x="354" y="226" width="218" height="104" rx="13" />
+              <text class="node-tag" x="374" y="250">FASTAPI ROUTE</text>
+              <text class="node-title" x="374" y="276">POST /ingest</text>
+              <text class="node-subtitle" x="374" y="298">Receives uploaded files</text>
+              <text class="node-subtitle" x="374" y="315">Persists PDFs for processing</text>
+            </g>
+
+            <g class="node accent-amber" data-node="startup" data-flow="ingest" tabindex="0" role="button" aria-label="FastAPI startup indexing">
+              <rect x="354" y="368" width="218" height="104" rx="13" />
+              <text class="node-tag" x="374" y="392">FASTAPI LIFESPAN</text>
+              <text class="node-title" x="374" y="418">Startup index check</text>
+              <text class="node-subtitle" x="374" y="440">Runs once when the API starts</text>
+              <text class="node-subtitle" x="374" y="457">Indexes source only if missing</text>
+            </g>
+
+            <g class="node accent-amber" data-node="pdf-loader" data-flow="ingest" tabindex="0" role="button" aria-label="PDF text extraction">
+              <rect x="644" y="226" width="218" height="104" rx="13" />
+              <text class="node-tag" x="664" y="250">DOCUMENT LOADER</text>
+              <text class="node-title" x="664" y="276">PyPDFLoader</text>
+              <text class="node-subtitle" x="664" y="298">Extracts text from PDF pages</text>
+              <text class="node-subtitle" x="664" y="315">Preserves page metadata</text>
+            </g>
+
+            <g class="node accent-amber" data-node="web-loader" data-flow="ingest" tabindex="0" role="button" aria-label="Web page text extraction">
+              <rect x="644" y="368" width="218" height="104" rx="13" />
+              <text class="node-tag" x="664" y="392">DOCUMENT LOADER</text>
+              <text class="node-title" x="664" y="418">WebBaseLoader</text>
+              <text class="node-subtitle" x="664" y="440">Fetches page · parses HTML</text>
+              <text class="node-subtitle" x="664" y="457">Beautiful Soup parser</text>
+            </g>
+
+            <g class="node accent-amber" data-node="splitter" data-flow="ingest" tabindex="0" role="button" aria-label="Text chunking">
+              <rect x="934" y="297" width="222" height="118" rx="13" />
+              <text class="node-tag" x="954" y="322">LANGCHAIN · CHUNKING</text>
+              <text class="node-title" x="954" y="349">Text splitter</text>
+              <text class="node-subtitle" x="954" y="374">1,000 chars per chunk</text>
+              <text class="node-subtitle" x="954" y="393">200-char overlap</text>
+            </g>
+
+            <g class="node accent-violet" data-node="embedding-model" data-flow="ingest shared" tabindex="0" role="button" aria-label="OpenAI embeddings">
+              <rect x="1210" y="297" width="222" height="118" rx="13" />
+              <text class="node-tag" x="1230" y="322">OPENAI · EMBEDDINGS</text>
+              <text class="node-title" x="1230" y="349">Vector representation</text>
+              <text class="node-subtitle" x="1230" y="374">Embeds each text chunk</text>
+              <text class="node-subtitle" x="1230" y="393">Same model embeds questions</text>
+            </g>
+
+            <g class="node accent-violet" data-node="sqlite" data-flow="ingest chat shared" tabindex="0" role="button" aria-label="SQLiteVec vector database">
+              <rect x="1490" y="297" width="236" height="118" rx="13" />
+              <text class="node-tag" x="1510" y="322">PERSISTENT VECTOR STORE</text>
+              <text class="node-title" x="1510" y="349">SQLiteVec</text>
+              <text class="node-subtitle" x="1510" y="374">Table: knowledge_base</text>
+              <text class="node-subtitle" x="1510" y="393">server/data/knowledge_base.db</text>
+            </g>
+
+            <g class="node accent-cyan" data-node="browser" data-flow="chat" tabindex="0" role="button" aria-label="React chat client">
+              <rect x="58" y="708" width="226" height="118" rx="13" />
+              <text class="node-tag" x="77" y="733">BROWSER · REACT + TYPESCRIPT</text>
+              <text class="node-title" x="77" y="760">Chat interface</text>
+              <text class="node-subtitle" x="77" y="784">Question + conversation UI</text>
+              <text class="node-subtitle" x="77" y="803">Markdown answer + source cards</text>
+            </g>
+
+            <g class="node accent-cyan" data-node="api-chat" data-flow="chat" tabindex="0" role="button" aria-label="FastAPI chat endpoint">
+              <rect x="354" y="708" width="218" height="118" rx="13" />
+              <text class="node-tag" x="374" y="733">FASTAPI ROUTE</text>
+              <text class="node-title" x="374" y="760">POST /chat</text>
+              <text class="node-subtitle" x="374" y="784">Receives the user question</text>
+              <text class="node-subtitle" x="374" y="803">Returns answer + sources</text>
+            </g>
+
+            <g class="node accent-cyan" data-node="retriever" data-flow="chat" tabindex="0" role="button" aria-label="Semantic retriever">
+              <rect x="644" y="708" width="218" height="118" rx="13" />
+              <text class="node-tag" x="664" y="733">LANGCHAIN RETRIEVER</text>
+              <text class="node-title" x="664" y="760">Similarity search</text>
+              <text class="node-subtitle" x="664" y="784">Embeds question, searches vectors</text>
+              <text class="node-subtitle" x="664" y="803">Returns top 4 relevant chunks</text>
+            </g>
+
+            <g class="node accent-cyan" data-node="context" data-flow="chat" tabindex="0" role="button" aria-label="Context assembly">
+              <rect x="934" y="708" width="222" height="118" rx="13" />
+              <text class="node-tag" x="954" y="733">RAG PROMPT</text>
+              <text class="node-title" x="954" y="760">Context assembly</text>
+              <text class="node-subtitle" x="954" y="784">Question + retrieved passages</text>
+              <text class="node-subtitle" x="954" y="803">Grounded answer instructions</text>
+            </g>
+
+            <g class="node accent-violet" data-node="chat-model" data-flow="chat" tabindex="0" role="button" aria-label="OpenAI chat model">
+              <rect x="1210" y="708" width="222" height="118" rx="13" />
+              <text class="node-tag" x="1230" y="733">OPENAI · CHAT COMPLETION</text>
+              <text class="node-title" x="1230" y="760">gpt-4o-mini</text>
+              <text class="node-subtitle" x="1230" y="784">Generates an answer from context</text>
+              <text class="node-subtitle" x="1230" y="803">Temperature: 0</text>
+            </g>
+
+            <g class="node accent-green" data-node="response" data-flow="chat" tabindex="0" role="button" aria-label="Chat response with sources">
+              <rect x="1490" y="708" width="236" height="118" rx="13" />
+              <text class="node-tag" x="1510" y="733">API RESPONSE</text>
+              <text class="node-title" x="1510" y="760">Answer + sources</text>
+              <text class="node-subtitle" x="1510" y="784">JSON answer and source chunks</text>
+              <text class="node-subtitle" x="1510" y="803">Rendered back in the chat UI</text>
+            </g>
+
+            <path class="flow flow-ingest" data-flow="ingest" d="M284 278 H354" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M572 278 H644" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M284 420 H320 Q336 420 336 404 V390 Q336 368 354 368" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M572 420 H644" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M862 278 H895 Q914 278 914 297 V326 H934" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M862 420 H895 Q914 420 914 401 V385 H934" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M1156 356 H1210" marker-end="url(#arrow-ingest)" />
+            <path class="flow flow-ingest" data-flow="ingest" d="M1432 356 H1490" marker-end="url(#arrow-ingest)" />
+
+            <path class="flow flow-chat" data-flow="chat" d="M284 767 H354" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-chat" data-flow="chat" d="M572 767 H644" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-chat" data-flow="chat" d="M862 767 H934" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-chat" data-flow="chat" d="M1156 767 H1210" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-chat" data-flow="chat" d="M1432 767 H1490" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-chat" data-flow="chat" d="M1608 826 V884 H171 Q158 884 158 871 V826" marker-end="url(#arrow-chat)" />
+            <path class="flow flow-shared" data-flow="shared chat" d="M1608 415 V474 Q1608 494 1588 494 H754 Q734 494 734 514 V708" marker-start="url(#arrow-shared)" />
+
+            <text class="flow-label" data-flow="shared" x="1075" y="486">persist chunks + metadata</text>
+            <text class="flow-label" data-flow="shared chat" x="1365" y="518">retrieve matching chunks</text>
+            <text class="flow-label" data-flow="chat" x="760" y="902">JSON response returned to the browser</text>
+            <text class="flow-label" data-flow="ingest" x="298" y="263">upload</text>
+            <text class="flow-label" data-flow="ingest" x="590" y="263">PDF</text>
+            <text class="flow-label" data-flow="ingest" x="590" y="405">startup</text>
+            <text class="flow-label" data-flow="chat" x="294" y="752">question</text>
+            <text class="flow-label" data-flow="chat" x="1438" y="752">answer + sources</text>
+
+            <g transform="translate(54 948)">
+              <circle class="stage-number" cx="10" cy="10" r="10" />
+              <text class="stage-number-text" x="10" y="10">1</text>
+              <text x="28" y="14" fill="#a8b5c8" font-size="11">Ingest and embed source documents</text>
+              <path d="M260 10 H310" stroke="#60718c" stroke-width="1.5" marker-end="url(#arrow-shared)" />
+              <circle class="stage-number" cx="330" cy="10" r="10" />
+              <text class="stage-number-text" x="330" y="10">2</text>
+              <text x="348" y="14" fill="#a8b5c8" font-size="11">Retrieve relevant chunks</text>
+              <path d="M516 10 H566" stroke="#60718c" stroke-width="1.5" marker-end="url(#arrow-shared)" />
+              <circle class="stage-number" cx="586" cy="10" r="10" />
+              <text class="stage-number-text" x="586" y="10">3</text>
+              <text x="604" y="14" fill="#a8b5c8" font-size="11">Generate a context-grounded response</text>
+            </g>
+
+            <text x="1740" y="1010" text-anchor="end" fill="#73839a" font-size="10">Knowledge Builder · Local RAG architecture</text>
+          </svg>
+        </div>
+        <div class="below-diagram">
+          <div class="legend" aria-label="Data flow legend">
+            <span class="legend-item"><span class="legend-line ingest"></span>Document ingestion</span>
+            <span class="legend-item"><span class="legend-line chat"></span>Question and answer</span>
+            <span class="legend-item"><span class="legend-line shared"></span>Shared vector storage</span>
+            <span class="legend-item">Tip: select any component to inspect its role</span>
+          </div>
+          <aside class="detail-card" aria-live="polite">
+            <p class="detail-label" id="detail-label">Interactive component guide</p>
+            <h2 class="detail-title" id="detail-title">Select a component</h2>
+            <p class="detail-copy" id="detail-copy">
+              Click or keyboard-focus any box in the diagram to learn what it does in the app.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <footer class="footer">
+        <span><strong>LinkedIn tip:</strong> choose “Export LinkedIn PNG” for a 2× raster image, or download the SVG for a crisp vector graphic.</span>
+        <span>Standalone file · no server or external libraries required</span>
+      </footer>
+    </main>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script>
+      const diagram = document.querySelector("#diagram");
+      const modeButtons = [...document.querySelectorAll(".mode-button")];
+      const detailLabel = document.querySelector("#detail-label");
+      const detailTitle = document.querySelector("#detail-title");
+      const detailCopy = document.querySelector("#detail-copy");
+      const toast = document.querySelector("#toast");
+      let toastTimer;
+
+      const componentInfo = {
+        "pdf-source": ["Client input", "The React upload control accepts PDFs and sends selected files as multipart data in the `files` field to the API."],
+        "web-source": ["Configured source", "The default URL comes from DEFAULT_RAG_URL in server/.env. The FastAPI startup hook indexes it only when the database has no chunks for that source."],
+        "api-ingest": ["FastAPI endpoint", "POST /ingest receives uploaded files, saves them under server/app/data/, and passes each document to the PDF ingestion pipeline."],
+        startup: ["FastAPI lifespan", "At application startup, the lifespan function checks SQLite metadata for the configured web source. If missing, it schedules indexing before the API finishes startup."],
+        "pdf-loader": ["PDF extraction", "PyPDFLoader extracts page text and document metadata from the uploaded PDF before chunking."],
+        "web-loader": ["Web ingestion", "WebBaseLoader fetches the configured page and parses its HTML using Beautiful Soup. The source URL is retained in metadata."],
+        splitter: ["Chunking", "RecursiveCharacterTextSplitter creates chunks up to 1,000 characters with 200 characters of overlap so nearby context is retained."],
+        "embedding-model": ["Vector embeddings", "OpenAI embeddings convert text chunks to vectors for similarity search. The same embedding integration represents a user's question during retrieval."],
+        sqlite: ["Persistent vector store", "SQLiteVec stores vectors, text, and metadata in the knowledge_base table in server/data/knowledge_base.db. The database survives server restarts."],
+        browser: ["React client", "The browser app provides the chat and PDF upload experience. It renders assistant output as Markdown and shows retrieved source excerpts."],
+        "api-chat": ["FastAPI endpoint", "POST /chat receives a JSON question, calls the retriever, assembles the context prompt, and returns an answer with source chunks."],
+        retriever: ["Semantic retrieval", "The LangChain retriever searches the SQLiteVec index and returns the four most relevant chunks for the question."],
+        context: ["Prompt assembly", "The question and retrieved passage text are combined into the model prompt. This is the retrieval-augmented part of RAG."],
+        "chat-model": ["Answer generation", "OpenAI gpt-4o-mini receives the question with retrieved context and generates the response."],
+        response: ["Answer + sources", "The API response contains the answer and source chunks with their metadata; the client displays them in the conversation."],
+      };
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2600);
+      }
+
+      function setMode(mode) {
+        diagram.dataset.mode = mode;
+        modeButtons.forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.mode === mode));
+        });
+      }
+
+      modeButtons.forEach((button) => {
+        button.addEventListener("click", () => setMode(button.dataset.mode));
+      });
+
+      function selectComponent(node) {
+        document.querySelectorAll("#diagram .node").forEach((item) => {
+          item.classList.toggle("is-selected", item === node);
+        });
+        const [label, description] = componentInfo[node.dataset.node];
+        detailLabel.textContent = label;
+        detailTitle.textContent = node.querySelector(".node-title").textContent;
+        detailCopy.textContent = description;
+      }
+
+      document.querySelectorAll("#diagram .node").forEach((node) => {
+        node.addEventListener("click", () => selectComponent(node));
+        node.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            selectComponent(node);
+          }
+        });
+      });
+
+      function serializedDiagram() {
+        const clone = diagram.cloneNode(true);
+        clone.setAttribute("width", "1800");
+        clone.setAttribute("height", "1060");
+        clone.dataset.mode = "all";
+        clone.querySelectorAll(".node").forEach((node) => node.classList.remove("is-selected"));
+        const styles = document.createElementNS("http://www.w3.org/2000/svg", "style");
+        styles.textContent = document.querySelector("#diagram-style").textContent;
+        clone.insertBefore(styles, clone.firstChild);
+        return new XMLSerializer().serializeToString(clone);
+      }
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      document.querySelector("#download-svg").addEventListener("click", () => {
+        const svgBlob = new Blob([serializedDiagram()], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+        downloadBlob(svgBlob, "knowledge-builder-architecture.svg");
+        showToast("SVG downloaded. It stays crisp at any size.");
+      });
+
+      document.querySelector("#download-png").addEventListener("click", () => {
+        const image = new Image();
+        const svgBlob = new Blob([serializedDiagram()], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+        const imageUrl = URL.createObjectURL(svgBlob);
+        image.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = 3600;
+          canvas.height = 2120;
+          const context = canvas.getContext("2d");
+          context.fillStyle = "#0c1321";
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(imageUrl);
+          canvas.toBlob((pngBlob) => {
+            if (pngBlob) {
+              downloadBlob(pngBlob, "knowledge-builder-architecture-linkedin.png");
+              showToast("LinkedIn-ready 3600 × 2120 PNG downloaded.");
+            } else {
+              showToast("PNG export failed. Try downloading the SVG instead.");
+            }
+          }, "image/png");
+        };
+        image.onerror = () => {
+          URL.revokeObjectURL(imageUrl);
+          showToast("PNG export failed. Try downloading the SVG instead.");
+        };
+        image.src = imageUrl;
+      });
+    </script>
+  </body>
+</html>
